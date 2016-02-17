@@ -31,7 +31,11 @@ type hash map[string]interface{}
 func Admin(req router.Request) (*router.Response, error) {
 	if !req.User.IsAdmin {
 		return router.JSONResponse(403, hash{
-			"error": "forbidden",
+			"error": [1]hash{
+				hash{
+					"detail": "forbidden",
+				},
+			},
 		}), nil
 	}
 	return nil, nil
