@@ -57,10 +57,10 @@ func main() {
 	/**
 	 * APPS
 	 */
-	router.Get("/apps", apps.ListApplications)
-	router.Delete("/apps/:app_id", apps.UnpublishApplication)
+	router.Get("/apps", middlewares.Admin, apps.ListApplications)
+	router.Delete("/apps/:app_id", middlewares.Admin, apps.UnpublishApplication)
 	router.Get("/apps/me", apps.ListUserApps)
-	router.Post("/apps", apps.PublishApplication)
+	router.Post("/apps", middlewares.Admin, apps.PublishApplication)
 	router.Get("/apps/connections", apps.GetConnections)
 	router.Put("/apps/:app_id", middlewares.Admin, apps.ChangeAppName)
 
