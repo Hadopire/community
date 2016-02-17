@@ -2,13 +2,14 @@ package router
 
 import (
 	"encoding/json"
-	"github.com/Nanocloud/community/nanocloud/models/users"
-	"github.com/Nanocloud/community/nanocloud/oauth2"
-	"github.com/Nanocloud/nano"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/Nanocloud/community/nanocloud/models/users"
+	"github.com/Nanocloud/community/nanocloud/oauth2"
+	"github.com/Nanocloud/nano"
 )
 
 type hash map[string]interface{}
@@ -26,13 +27,17 @@ const (
 )
 
 func replyError(res http.ResponseWriter, statusCode int, message string) {
-	m := make(map[string]string)
-
-	m["error"] = message
+	m := hash{
+		"error": [1]hash{
+			hash{
+				"detail": message,
+			},
+		},
+	}
 
 	b, err := json.Marshal(m)
 	if err != nil {
-		res.Write([]byte(`{"error":"internal server error"}`))
+		res.Write([]byte(`{"error":[{"detail":"internal server error"}]}`))
 		res.WriteHeader(500)
 		return
 	}
@@ -111,14 +116,22 @@ func handleRequest(path string, user *users.User, body []byte, res http.Response
 	u, err := url.Parse(req.URL.Path)
 	if err != nil {
 		return JSONResponse(500, hash{
-			"error": err.Error(),
+			"error": [1]hash{
+				hash{
+					"detail": err.Error(),
+				},
+			},
 		})
 	}
 
 	query, err := url.ParseQuery(u.RawQuery)
 	if err != nil {
 		return JSONResponse(500, hash{
-			"error": err.Error(),
+			"error": [1]hash{
+				hash{
+					"detail": err.Error(),
+				},
+			},
 		})
 	}
 
@@ -141,7 +154,11 @@ func handleRequest(path string, user *users.User, body []byte, res http.Response
 					response, err = handler(r)
 					if err != nil {
 						return JSONResponse(500, hash{
-							"error": err.Error(),
+							"error": [1]hash{
+								hash{
+									"detail": err.Error(),
+								},
+							},
 						})
 					}
 					if response != nil {
@@ -150,7 +167,11 @@ func handleRequest(path string, user *users.User, body []byte, res http.Response
 				}
 
 				return JSONResponse(500, hash{
-					"error": err.Error(),
+					"error": [1]hash{
+						hash{
+							"detail": err.Error(),
+						},
+					},
 				})
 			}
 		}
@@ -161,7 +182,11 @@ func handleRequest(path string, user *users.User, body []byte, res http.Response
 	if exists {
 		if len(rContentType) != 1 {
 			return JSONResponse(400, hash{
-				"error": "invalid mutiple content-type",
+				"error": [1]hash{
+					hash{
+						"detail": "invalid mutiple content-type",
+					},
+				},
 			})
 		}
 
@@ -188,7 +213,11 @@ func handleRequest(path string, user *users.User, body []byte, res http.Response
 
 	if err != nil {
 		return JSONResponse(500, hash{
-			"error": err.Error(),
+			"error": [1]hash{
+				hash{
+					"detail": err.Error(),
+				},
+			},
 		})
 	}
 
