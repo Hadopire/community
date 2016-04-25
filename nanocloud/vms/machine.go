@@ -22,7 +22,11 @@
 
 package vms
 
-import "net"
+import (
+	"net"
+
+	"github.com/Nanocloud/community/nanocloud/vms"
+)
 
 type MachineStatus int
 
@@ -45,6 +49,7 @@ type Machine interface {
 	Type() (MachineType, error)
 	Progress() (uint8, error)
 	Credentials() (string, string, error)
+	Attributes() (vms.MachineAttributes, error)
 
 	Start() error
 	Stop() error

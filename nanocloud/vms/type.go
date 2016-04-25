@@ -22,15 +22,21 @@
 
 package vms
 
+import "net"
+
 type MachineType interface {
 	Id() string
 	Label() string
 }
 
 type MachineAttributes struct {
-	Type     MachineType
-	Name     string
+	Id       string `json:"id"`
+	Platform string `json:"platform"`
+	Name     string `json:"name"`
+	Status   string `json:"status"`
+	Ip       net.IP `json:"ip"`
+	Type     MachineType `json:"
+	Progress string
 	Username string
 	Password string
-	Ip       string
 }

@@ -287,3 +287,42 @@ func getIPfromDHCPLeaseFile(dhcpfile, macaddr string) (string, error) {
 func (m *machine) Credentials() (string, string, error) {
 	return "Administrator", "Nanocloud123+", nil
 }
+
+func (m *machine) Attributes() (vms.MachineAttributes, error) {
+
+	attr := vms.MachineAttributes{}
+
+	Id, err := m.Id()
+	if err != nil {
+		return nil, err
+	}
+	Platform, err := m.Platform()
+	if err != nil {
+		return nil, err
+	}
+	Name, err := m.Name()
+	if err != nil {
+		return nil, err
+	}
+	Status, err := m.Status()
+	if err != nil {
+		return nil, err
+	}
+	Ip, err := m.IP()
+	if err != nil {
+		return nil, err
+	}
+	Type, err := m.Type()
+	if err != nil {
+		return nil, err
+	}
+	Progress, err := m.Progress()
+	if err != nil {
+		return nil, err
+	}
+	Username, Password, err := m.Credentials()
+	if err != nil {
+		return nil, err
+	}
+	return attr, nil
+}
