@@ -1,0 +1,8 @@
+To use the aws driver, you need to setup the following environment variables:
+IAAS=aws
+AWS_REGION: the aws region where you want your vms to be. example: REGION=eu-central-1.
+AWS_ACCESS_KEY_ID: your aws access key ID.
+AWS_SECRET_ACCESS_KEY: your aws secret access key.
+AWS_AMI: the amazon machine image you want to create your instances from
+AWS_INSTANCE_TYPE: the type of instance you want to create
+AWS_PRIVATE_KEY: the path to where you want to save the aws private key

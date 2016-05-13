@@ -30,6 +30,7 @@ import (
 	apiErrors "github.com/Nanocloud/community/nanocloud/errors"
 	m "github.com/Nanocloud/community/nanocloud/middlewares"
 	"github.com/Nanocloud/community/nanocloud/migration"
+	machinebroker "github.com/Nanocloud/community/nanocloud/models/machine-broker"
 	_ "github.com/Nanocloud/community/nanocloud/models/oauth"
 	"github.com/Nanocloud/community/nanocloud/routes/apps"
 	"github.com/Nanocloud/community/nanocloud/routes/files"
@@ -44,7 +45,9 @@ import (
 	"github.com/Nanocloud/community/nanocloud/routes/users"
 	"github.com/Nanocloud/community/nanocloud/utils"
 	"github.com/Nanocloud/community/nanocloud/vms"
+	_ "github.com/Nanocloud/community/nanocloud/vms/drivers/aws"
 	_ "github.com/Nanocloud/community/nanocloud/vms/drivers/manual"
+	_ "github.com/Nanocloud/community/nanocloud/vms/drivers/openstack"
 	_ "github.com/Nanocloud/community/nanocloud/vms/drivers/qemu"
 	_ "github.com/Nanocloud/community/nanocloud/vms/drivers/vmwarefusion"
 	log "github.com/Sirupsen/logrus"
@@ -74,6 +77,21 @@ func initVms() error {
 		- EXECUTION_SERVERS
 		- WIN_PASSWORD
 		- WIN_USER */
+	case "openstack":
+		m["ADDRESS"] = os.Getenv("OPENSTACK_ADDRESS")
+		m["TENANT"] = os.Getenv("OPENSTACK_TENANTNAME")
+		m["USERNAME"] = os.Getenv("OPENSTACK_USERNAME")
+		m["PASSWORD"] = os.Getenv("OPENSTACK_PASSWORD")
+		m["IMAGE"] = os.Getenv("OPENSTACK_IMAGE")
+
+	case "aws":
+		m["REGION"] = os.Getenv("AWS_REGION")
+		m["ACCESS"] = os.Getenv("AWS_ACCESS_KEY_ID")
+		m["SECRET"] = os.Getenv("AWS_SECRET_ACCESS_KEY")
+		m["AMI"] = os.Getenv("AWS_AMI")
+		m["INSTANCE_TYPE"] = os.Getenv("AWS_INSTANCE_TYPE")
+		m["PEM_PATH"] = os.Getenv("AWS_PRIVATE_KEY")
+
 	}
 
 	vm, err := vms.Open(iaas, m)
@@ -81,6 +99,21 @@ func initVms() error {
 		return err
 	}
 	vmsConn.SetVM(vm)
+
+	if os.Getenv("IAAS") == "aws" {
+
+		empty, err := machinebroker.PoolEmpty()
+		if err != nil {
+			return err
+		} else if !empty {
+			return nil
+		}
+
+		err = machinebroker.UpgradePool(3)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

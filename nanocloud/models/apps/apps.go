@@ -26,11 +26,13 @@ import (
 	"encoding/json"
 	"errors"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Nanocloud/community/nanocloud/connectors/db"
+	machinebroker "github.com/Nanocloud/community/nanocloud/models/machine-broker"
 	"github.com/Nanocloud/community/nanocloud/models/users"
 	"github.com/Nanocloud/community/nanocloud/plaza"
 	"github.com/Nanocloud/community/nanocloud/utils"
@@ -378,59 +380,89 @@ func RetrieveConnections(user *users.User, users []*users.User) ([]Connection, e
 
 	rand.Seed(time.Now().UTC().UnixNano())
 	var connections []Connection
-
-	rows, err := db.Query("SELECT alias FROM apps")
-	if err != nil {
-		log.Error("Unable to retrieve apps list from Postgres: ", err.Error())
-		return nil, AppsListUnavailable
-	}
-	defer rows.Close()
-	var execServ string
-	for rows.Next() {
-		appParam := Application{}
-		rows.Scan(
-			&appParam.Alias,
-		)
-
-		if count := len(kExecutionServers); count > 0 {
-			execServ = kExecutionServers[rand.Intn(count)]
-		} else {
-			execServ = kServer
-		}
-
-		winUser, err := user.WindowsCredentials()
+	if os.Getenv("IAAS") != "aws" {
+		rows, err := db.Query("SELECT alias FROM apps")
 		if err != nil {
+			log.Error("Unable to retrieve apps list from Postgres: ", err.Error())
+			return nil, AppsListUnavailable
+		}
+		defer rows.Close()
+		var execServ string
+		for rows.Next() {
+			appParam := Application{}
+			rows.Scan(
+				&appParam.Alias,
+			)
+
+			if count := len(kExecutionServers); count > 0 {
+				execServ = kExecutionServers[rand.Intn(count)]
+			} else {
+				execServ = kServer
+			}
+
+			winUser, err := user.WindowsCredentials()
+			if err != nil {
+				return nil, err
+			}
+
+			username := winUser.Sam + "@" + winUser.Domain
+			pwd := winUser.Password
+
+			var conn Connection
+			if appParam.Alias != "hapticDesktop" {
+				conn = Connection{
+					Hostname:  execServ,
+					Port:      kRDPPort,
+					Protocol:  kProtocol,
+					Username:  username,
+					Password:  pwd,
+					RemoteApp: "||" + appParam.Alias,
+					AppName:   appParam.Alias,
+				}
+			} else {
+				conn = Connection{
+					Hostname:  execServ,
+					Port:      kRDPPort,
+					Protocol:  kProtocol,
+					Username:  username,
+					Password:  pwd,
+					RemoteApp: "",
+					AppName:   "hapticDesktop",
+				}
+			}
+			connections = append(connections, conn)
+		}
+	} else {
+		machine, err := machinebroker.GetMachine(user)
+		if err != nil {
+			log.Error(err.Error())
 			return nil, err
 		}
 
-		username := winUser.Sam + "@" + winUser.Domain
-		pwd := winUser.Password
-
-		var conn Connection
-		if appParam.Alias != "hapticDesktop" {
-			conn = Connection{
-				Hostname:  execServ,
-				Port:      kRDPPort,
-				Protocol:  kProtocol,
-				Username:  username,
-				Password:  pwd,
-				RemoteApp: "||" + appParam.Alias,
-				AppName:   appParam.Alias,
-			}
-		} else {
-			conn = Connection{
-				Hostname:  execServ,
-				Port:      kRDPPort,
-				Protocol:  kProtocol,
-				Username:  username,
-				Password:  pwd,
-				RemoteApp: "",
-				AppName:   "hapticDesktop",
-			}
+		username, pwd, err := machine.Credentials()
+		if err != nil {
+			log.Error(err.Error())
+			return nil, err
 		}
+
+		ip, err := machine.IP()
+		if err != nil {
+			log.Error(err.Error())
+			return nil, err
+		}
+
+		conn := Connection{
+			Hostname:  ip.String(),
+			Port:      kRDPPort,
+			Protocol:  kProtocol,
+			Username:  username,
+			Password:  pwd,
+			RemoteApp: "",
+			AppName:   "hapticDesktop",
+		}
+
 		connections = append(connections, conn)
 	}
-
 	return connections, nil
 }
 

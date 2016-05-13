@@ -24,6 +24,7 @@ package apps
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -64,6 +65,8 @@ func GetConnections(c *echo.Context) error {
 			"type":       "application",
 			"attributes": val,
 		}
+		str, _ := json.Marshal(res)
+		fmt.Println(string(str))
 		response[i] = res
 	}
 	return c.JSON(http.StatusOK, hash{"data": response})

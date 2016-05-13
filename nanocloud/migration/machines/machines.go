@@ -32,7 +32,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func Migrate() error {
+func MachineTable() error {
+
 	rows, err := db.Query(
 		`SELECT table_name
 		FROM information_schema.tables
@@ -94,5 +95,45 @@ func Migrate() error {
 		}
 	}
 	rows.Close()
+	return nil
+}
+
+func MachineUsers() error {
+
+	if os.Getenv("IAAS") == "aws" {
+		rows, err := db.Query(
+			`SELECT table_name
+		FROM information_schema.tables
+		WHERE table_name = 'machines_users'`)
+		if err != nil {
+			log.Error(err.Error())
+			panic(err)
+		}
+		defer rows.Close()
+
+		if rows.Next() {
+			log.Info("Machines_users table already set up")
+			return nil
+		}
+
+		rows, err = db.Query(
+			`CREATE TABLE machines_users (
+			user_id            varchar(60),
+			machine_id         varchar(60)
+		);`)
+		if err != nil {
+			log.Errorf("Unable to create machines users table: %s", err)
+			return err
+		}
+		rows.Close()
+
+	}
+	return nil
+}
+
+func Migrate() error {
+
+	MachineTable()
+	MachineUsers()
 	return nil
 }
